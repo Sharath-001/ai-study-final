@@ -1,26 +1,36 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
+import uvicorn
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route("/", methods=["GET"])
-def home():
-    return "running"
+class ResetRequest(BaseModel):
+    task_id: Optional[str] = "easy"
 
-@app.route("/reset", methods=["POST"])
-def reset():
-    return jsonify({
+@app.post("/reset")
+async def reset(request: Optional[ResetRequest] = None):
+    task = request.task_id if request else "easy"
+    return {
         "status": "ok",
+        "task_id": task,
         "observation": {}
-    })
+    }
 
-@app.route("/infer", methods=["POST"])
-def infer():
-    data = request.get_json()
-    topic = data.get("topic", "General Topic")
+@app.post("/step")
+async def step():
+    return {
+        "reward": 0.5,
+        "done": False,
+        "observation": {}
+    }
 
-    return jsonify({
-        "response": f"Explanation of {topic}"
-    })
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+def main():
+    uvicorn.run(app, host="0.0.0.0", port=7860)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=7860)
+    main()
